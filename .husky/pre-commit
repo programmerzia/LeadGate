@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# Lead Gate — pre-commit gate
+# Runs:
+#   1. lint-staged  (prettier + eslint --fix on staged files)
+#   2. check:secrets (refuses commits that look like leaked credentials)
+#   3. typecheck     (strict TS — fail fast on type regressions)
+
+set -e
+
+echo "▶ lint-staged"
+npx lint-staged
+
+echo "▶ secret scan"
+npm run check:secrets
+
+echo "▶ typecheck"
+npm run typecheck
+
+echo "✓ pre-commit ok"

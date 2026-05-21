@@ -1,0 +1,47 @@
+# CodeRabbit AI review configuration
+# Docs: https://docs.coderabbit.ai/guides/configuration-overview
+#
+# CodeRabbit posts an AI review on every PR. This file tells it the
+# project's standards so reviews stay on-topic.
+
+language: "en-US"
+tone_instructions: |
+  Be concise and direct. Use the format: Must fix / Should fix / Nice to have.
+  Cite the file and line. Do not restate the diff.
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+
+  path_instructions:
+    - path: "lib/qualifyLead.ts"
+      instructions: |
+        This is the SINGLE SOURCE OF TRUTH for the qualification rule.
+        Reject any duplication of email-emptiness or domain checks elsewhere.
+        Reject impurity (Date.now, randomness, I/O).
+    - path: "lib/store/**"
+      instructions: |
+        Every read MUST filter by tenant_id. Flag any query missing it.
+        Flag any contact_email leaking into thrown errors or logs.
+    - path: "app/actions/**"
+      instructions: |
+        Validate input with Zod (.strict()). tenant_id must be UUID.
+        Never echo user input back in error responses.
+    - path: "supabase/migrations/**"
+      instructions: |
+        RLS must be enabled on every tenant-scoped table.
+        Reasonable indexes on (tenant_id) and (tenant_id, created_at).
+    - path: "**/*.test.ts"
+      instructions: |
+        Tests must not hit network/db/fs. Encourage edge cases.
+
+  auto_review:
+    enabled: true
+    drafts: false
+
+chat:
+  auto_reply: true

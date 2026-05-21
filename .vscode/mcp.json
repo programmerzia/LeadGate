@@ -1,0 +1,30 @@
+{
+  "// docs": "VS Code MCP servers config. https://code.visualstudio.com/docs/copilot/customization/mcp-servers",
+  "// security": "Tokens are read from VS Code input prompts. NEVER hardcode tokens here.",
+
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "github_pat",
+      "description": "GitHub Personal Access Token (classic, repo + read:org). Create at https://github.com/settings/tokens",
+      "password": true
+    }
+  ],
+
+  "servers": {
+    "github": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github_pat}"
+      }
+    },
+    "//context7-disabled": {
+      "note": "Enable when you want up-to-date library docs in chat. Run: npx -y @upstash/context7-mcp"
+    },
+    "//supabase-disabled-until-step-4": {
+      "note": "Enable after Supabase project is created (Step 4). Needs SUPABASE_ACCESS_TOKEN."
+    }
+  }
+}

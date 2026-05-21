@@ -1,0 +1,28 @@
+# .gitleaks.toml — config for the heavier CI-grade scanner
+# Run locally with:  gitleaks detect --config .gitleaks.toml --redact -v
+# Run in CI with:    gitleaks/gitleaks-action@v2  (GitHub Action)
+#
+# Our local pre-commit hook uses scripts/check-secrets.mjs (no install needed).
+# Gitleaks layers on top for full-history scans + extended rules.
+
+title = "Lead Gate gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documented placeholders and example values"
+regexes = [
+  '''YOUR-PROJECT-REF''',
+  '''sb_publishable_REPLACE_ME''',
+  '''sb_secret_REPLACE_ME''',
+  '''your-anon-key-here''',
+  '''your-service-role-key-here''',
+  '''00000000-0000-0000-0000-00000000000\\d''',
+]
+paths = [
+  '''node_modules/.*''',
+  '''\\.next/.*''',
+  '''package-lock\\.json''',
+  '''.env\\.local\\.example''',
+]

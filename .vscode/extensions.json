@@ -1,0 +1,16 @@
+{
+  "extensions": [
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "GitHub.copilot",
+    "GitHub.copilot-chat",
+    "SonarSource.sonarlint-vscode",
+    "CodeRabbit.coderabbit-vscode",
+    "eamodio.gitlens",
+    "usernamehw.errorlens",
+    "EditorConfig.EditorConfig",
+    "bradlc.vscode-tailwindcss",
+    "snyk-security.snyk-vulnerability-scanner",
+    "streetsidesoftware.code-spell-checker"
+  ]
+}
