@@ -23,7 +23,7 @@ export function qualifyLead(input: LeadInput): QualificationResult {
       status: "excluded",
       exclusion_reason: "missing_email",
       message:
-        "Excluded from outbound — no contact email. Kept for enrichment.",
+        "No contact email on file. Held back from outbound and routed to enrichment.",
     };
   }
 
@@ -32,13 +32,13 @@ export function qualifyLead(input: LeadInput): QualificationResult {
       status: "excluded",
       exclusion_reason: "disposable_email",
       message:
-        "Excluded from outbound — disposable email provider not allowed.",
+        "Disposable email provider detected. Held back to protect sender reputation.",
     };
   }
 
   return {
     status: "outbound_ready",
     exclusion_reason: null,
-    message: "Ready for outbound contact.",
+    message: "Lead approved. Ready to enter the outbound sequence.",
   };
 }

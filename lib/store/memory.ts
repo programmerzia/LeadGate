@@ -1,7 +1,8 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import type { Lead } from "@/lib/types";
+import type { Lead, Suppression, SuppressionKind } from "@/lib/types";
 import type { LeadStore, NewLead } from "./types";
+import { extractDomain } from "@/lib/domain-utils";
 
 /**
  * In-memory fallback store.
@@ -16,11 +17,29 @@ import type { LeadStore, NewLead } from "./types";
 // In production with multiple replicas this would not be coherent — by
 // design, we only use it as a dev fallback (see ADR-003).
 const rows: Lead[] = [];
+const suppressions: Suppression[] = [];
 
 class MemoryStore implements LeadStore {
   readonly backend = "memory" as const;
 
   async insert(lead: NewLead): Promise<Lead> {
+    // Check for duplicate email (case-insensitive) within tenant
+    if (lead.contact_email) {
+      const emailLower = lead.contact_email.toLowerCase();
+      const duplicate = rows.find(
+        (r) =>
+          r.tenant_id === lead.tenant_id &&
+          r.contact_email?.toLowerCase() === emailLower,
+      );
+      if (duplicate) {
+        // Simulate Postgres UNIQUE index violation
+        const error = new Error("duplicate key value violates unique constraint");
+        (error as any).code = "23505";
+        (error as any).constraint = "leads_tenant_email_lower_uniq";
+        throw error;
+      }
+    }
+
     const row: Lead = {
       id: randomUUID(),
       created_at: new Date().toISOString(),
@@ -51,6 +70,87 @@ class MemoryStore implements LeadStore {
     const idx = rows.findIndex((r) => r.id === id && r.tenant_id === tenantId);
     if (idx === -1) return false;
     rows.splice(idx, 1);
+    return true;
+  }
+
+  async checkSuppression(
+    tenantId: string,
+    email: string,
+  ): Promise<"suppressed" | "unsubscribed" | null> {
+    const emailLower = email.toLowerCase();
+    const domain = extractDomain(email);
+
+    // Check email-exact match
+    const emailMatch = suppressions.find(
+      (s) =>
+        s.tenant_id === tenantId &&
+        s.kind === "email" &&
+        s.pattern === emailLower,
+    );
+    if (emailMatch) return "suppressed";
+
+    // Check unsubscribed (matches domain)
+    if (domain) {
+      const unsubMatch = suppressions.find(
+        (s) =>
+          s.tenant_id === tenantId &&
+          s.kind === "unsubscribed" &&
+          s.pattern === domain,
+      );
+      if (unsubMatch) return "unsubscribed";
+
+      // Check domain-based suppression
+      const domainMatch = suppressions.find(
+        (s) =>
+          s.tenant_id === tenantId &&
+          s.kind === "domain" &&
+          s.pattern === domain,
+      );
+      if (domainMatch) return "suppressed";
+    }
+
+    return null;
+  }
+
+  async listSuppressions(tenantId: string): Promise<Suppression[]> {
+    return suppressions
+      .filter((s) => s.tenant_id === tenantId)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }
+
+  async addSuppression(
+    tenantId: string,
+    kind: SuppressionKind,
+    pattern: string,
+  ): Promise<Suppression> {
+    const normalizedPattern = pattern.trim().toLowerCase();
+
+    // Check for existing (idempotent)
+    const existing = suppressions.find(
+      (s) =>
+        s.tenant_id === tenantId &&
+        s.kind === kind &&
+        s.pattern === normalizedPattern,
+    );
+    if (existing) return existing;
+
+    const suppression: Suppression = {
+      id: randomUUID(),
+      tenant_id: tenantId,
+      kind,
+      pattern: normalizedPattern,
+      created_at: new Date().toISOString(),
+    };
+    suppressions.push(suppression);
+    return suppression;
+  }
+
+  async removeSuppression(tenantId: string, id: string): Promise<boolean> {
+    const idx = suppressions.findIndex(
+      (s) => s.id === id && s.tenant_id === tenantId,
+    );
+    if (idx === -1) return false;
+    suppressions.splice(idx, 1);
     return true;
   }
 }

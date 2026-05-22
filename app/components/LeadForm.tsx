@@ -45,24 +45,24 @@ export function LeadForm({
       <Field
         name="company_name"
         label="Company name"
-        placeholder="Acme Corp"
+        placeholder="e.g. Acme Corp"
         required
         error={fieldErr("company_name")}
       />
       <Field
         name="contact_email"
         label="Contact email"
-        placeholder="founder@acme.no  (leave empty to test exclusion)"
+        placeholder="founder@acme.com"
         type="text"
         autoComplete="off"
         spellCheck={false}
         error={fieldErr("contact_email")}
-        hint="Empty = excluded · disposable provider = excluded"
+        hint="Optional. Disposable providers are filtered automatically."
       />
       <Field
         name="org_number"
-        label="Org number"
-        placeholder="123456789  (optional)"
+        label="Organization number"
+        placeholder="Optional registry identifier"
         autoComplete="off"
         spellCheck={false}
         error={fieldErr("org_number")}
@@ -84,7 +84,7 @@ export function LeadForm({
       >
         {pending ? (
           <>
-            <Spinner /> Qualifying…
+            <Spinner /> Running qualification…
           </>
         ) : (
           <>Qualify lead</>

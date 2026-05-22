@@ -16,7 +16,11 @@ const expectExcluded = (
   const result = qualifyLead({ ...baseInput, contact_email: email });
   expect(result.status).toBe("excluded");
   expect(result.exclusion_reason).toBe(reason);
-  expect(result.message).toMatch(/Excluded/i);
+  // Excluded results must surface a non-empty user-facing message that
+  // explains what happened. We don't assert exact wording — copy is
+  // marketing-tunable — but it must be present and reference "outbound".
+  expect(result.message.length).toBeGreaterThan(0);
+  expect(result.message).toMatch(/outbound|enrichment|reputation/i);
 };
 
 const expectReady = (email: string) => {

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { qualifyLead } from "@/lib/qualifyLead";
 import { getStore } from "@/lib/store";
 import { isKnownTenant } from "@/lib/tenants";
-import type { Lead, LeadStats, QualificationResult } from "@/lib/types";
+import type { Lead, LeadStats, QualificationResult, Suppression } from "@/lib/types";
 
 /**
  * Server Actions for the Lead Gate UI.
@@ -98,10 +98,59 @@ export async function submitLeadAction(
     }
   }
 
+  const store = getStore();
+
+  // Pre-filter: Check suppression BEFORE qualifyLead
+  if (input.contact_email) {
+    const suppressionStatus = await store.checkSuppression(
+      input.tenant_id,
+      input.contact_email,
+    );
+
+    if (suppressionStatus === "unsubscribed") {
+      return {
+        ok: true,
+        lead: {
+          id: "",
+          ...input,
+          status: "excluded",
+          exclusion_reason: "unsubscribed",
+          created_at: new Date().toISOString(),
+        } as Lead,
+        qualification: {
+          status: "excluded",
+          exclusion_reason: "unsubscribed",
+          message:
+            "This email has unsubscribed. Excluded to comply with opt-out.",
+        },
+        backend: store.backend,
+      };
+    }
+
+    if (suppressionStatus === "suppressed") {
+      return {
+        ok: true,
+        lead: {
+          id: "",
+          ...input,
+          status: "excluded",
+          exclusion_reason: "suppressed",
+          created_at: new Date().toISOString(),
+        } as Lead,
+        qualification: {
+          status: "excluded",
+          exclusion_reason: "suppressed",
+          message:
+            "This email or domain is on your suppression list. Excluded from outbound.",
+        },
+        backend: store.backend,
+      };
+    }
+  }
+
   const qualification = qualifyLead(input);
 
   try {
-    const store = getStore();
     const lead = await store.insert({
       tenant_id: input.tenant_id,
       company_name: input.company_name,
@@ -116,7 +165,17 @@ export async function submitLeadAction(
       qualification,
       backend: store.backend,
     };
-  } catch (err) {
+  } catch (err: any) {
+    // Catch duplicate email constraint violation
+    if (err?.code === "23505" && err?.constraint === "leads_tenant_email_lower_uniq") {
+      return {
+        ok: false,
+        error: "Please fix the highlighted fields.",
+        fieldErrors: {
+          contact_email: ["This email has already been submitted for this tenant."],
+        },
+      };
+    }
     // Do NOT include user input in the message surfaced to other tenants.
     console.error("submitLeadAction insert failed:", err);
     return {
@@ -131,21 +190,24 @@ export async function listLeadsAction(
 ): Promise<{
   leads: Lead[];
   stats: LeadStats;
+  suppressions: Suppression[];
   backend: "supabase" | "memory";
 }> {
   if (!isKnownTenant(tenantId)) {
     return {
       leads: [],
       stats: { total: 0, excluded: 0, outbound_ready: 0 },
+      suppressions: [],
       backend: "memory",
     };
   }
   const store = getStore();
-  const [leads, stats] = await Promise.all([
+  const [leads, stats, suppressions] = await Promise.all([
     store.listByTenant(tenantId, 20),
     store.statsByTenant(tenantId),
+    store.listSuppressions(tenantId),
   ]);
-  return { leads, stats, backend: store.backend };
+  return { leads, stats, suppressions, backend: store.backend };
 }
 
 const DeleteSchema = z

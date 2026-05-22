@@ -93,7 +93,7 @@ export function LeadDetailsModal({
           <Row label="Lead ID" mono>
             {lead.id}
           </Row>
-          <Row label="Tenant" mono>
+          <Row label="Workspace" mono>
             {lead.tenant_id}
           </Row>
           <Row label="Contact email">
@@ -107,15 +107,17 @@ export function LeadDetailsModal({
                   className="rounded border border-black/10 px-2 py-0.5 text-xs opacity-70 hover:opacity-100 dark:border-white/10"
                   title="Copy to clipboard"
                 >
-                  copy
+                  Copy
                 </button>
               </span>
             ) : (
-              <span className="opacity-50">— none —</span>
+              <span className="opacity-50">Not provided</span>
             )}
           </Row>
-          <Row label="Org number">
-            {lead.org_number ?? <span className="opacity-50">—</span>}
+          <Row label="Organization no.">
+            {lead.org_number ?? (
+              <span className="opacity-50">Not provided</span>
+            )}
           </Row>
           <Row label="Created">
             {new Date(lead.created_at).toLocaleString()}
@@ -142,7 +144,7 @@ export function LeadDetailsModal({
 
           {confirming ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs opacity-70">Are you sure?</span>
+              <span className="text-xs opacity-70">This cannot be undone.</span>
               <button
                 onClick={() => setConfirming(false)}
                 disabled={pending}
@@ -155,7 +157,7 @@ export function LeadDetailsModal({
                 disabled={pending}
                 className="rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white shadow hover:bg-rose-700 disabled:opacity-50"
               >
-                {pending ? "Deleting…" : "Yes, delete"}
+                {pending ? "Deleting…" : "Confirm delete"}
               </button>
             </div>
           ) : (

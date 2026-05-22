@@ -12,22 +12,20 @@ export default async function HomePage() {
       <header className="relative">
         <div className="flex items-center gap-2 text-xs font-medium opacity-60">
           <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
-          AI-assisted demo · Lead Gate
+          Lead Gate
         </div>
         <h1 className="mt-2 text-4xl font-bold tracking-tight">
           <span className="bg-gradient-to-r from-indigo-600 via-fuchsia-600 to-rose-600 bg-clip-text text-transparent">
-            Qualify a lead.
+            Qualify inbound leads.
           </span>{" "}
-          <span className="opacity-80">Tenant-safe by construction.</span>
+          <span className="opacity-80">Before outbound wastes them.</span>
         </h1>
-        <p className="mt-2 max-w-2xl text-sm opacity-70">
-          One business rule, end-to-end: empty or disposable email →{" "}
-          <strong>excluded with reason</strong>; otherwise{" "}
-          <strong>outbound ready</strong>. Every row is scoped by{" "}
-          <code className="rounded bg-black/5 px-1.5 py-0.5 text-xs dark:bg-white/10">
-            tenant_id
-          </code>{" "}
-          with Row-Level Security.
+        <p className="mt-3 max-w-2xl text-sm opacity-70">
+          Every contact runs through one auditable rule before it joins your
+          outbound pipeline. Missing or disposable emails are filed for
+          enrichment instead of burning sender reputation. Each record stays
+          inside its workspace — enforced at the database with row-level
+          security.
         </p>
       </header>
 
@@ -35,16 +33,13 @@ export default async function HomePage() {
         initialTenantId={DEFAULT_TENANT_ID}
         initialLeads={initial.leads}
         initialStats={initial.stats}
+        initialSuppressions={initial.suppressions}
         backend={initial.backend}
       />
 
-      <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-black/5 pt-4 text-xs opacity-60 dark:border-white/10">
-        <span>
-          Built with Next.js 15 · TypeScript · Tailwind · Supabase · Vitest
-        </span>
-        <span>
-          AI workflow: Plan → grill-me → Skill → Build → Test → Review
-        </span>
+      <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-black/5 pt-4 text-xs opacity-50 dark:border-white/10">
+        <span>© Lead Gate</span>
+        <span>Powered by Next.js · Supabase · TypeScript</span>
       </footer>
     </main>
   );

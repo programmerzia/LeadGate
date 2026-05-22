@@ -6,15 +6,13 @@ import type { LeadStats } from "@/lib/types";
  */
 export const TENANTS = [
   {
-    id:
-      process.env.DEMO_TENANT_A ?? "00000000-0000-0000-0000-000000000001",
-    label: "Tenant A — Acme",
+    id: process.env.DEMO_TENANT_A ?? "00000000-0000-0000-0000-000000000001",
+    label: "Acme Sales",
     accent: "from-sky-500 to-indigo-500",
   },
   {
-    id:
-      process.env.DEMO_TENANT_B ?? "00000000-0000-0000-0000-000000000002",
-    label: "Tenant B — Globex",
+    id: process.env.DEMO_TENANT_B ?? "00000000-0000-0000-0000-000000000002",
+    label: "Globex Growth",
     accent: "from-fuchsia-500 to-rose-500",
   },
 ] as const;

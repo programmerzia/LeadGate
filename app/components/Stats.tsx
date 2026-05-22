@@ -3,8 +3,12 @@ import type { LeadStats } from "@/lib/types";
 export function Stats({ stats }: { stats: LeadStats }) {
   return (
     <div className="grid grid-cols-3 gap-3">
-      <Card label="Total" value={stats.total} tone="neutral" />
-      <Card label="Outbound ready" value={stats.outbound_ready} tone="ready" />
+      <Card label="Total leads" value={stats.total} tone="neutral" />
+      <Card
+        label="Ready for outbound"
+        value={stats.outbound_ready}
+        tone="ready"
+      />
       <Card label="Excluded" value={stats.excluded} tone="excluded" />
     </div>
   );

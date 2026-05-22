@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { listLeadsAction, type SubmitState } from "@/app/actions/leads";
 import { TENANTS, EMPTY_STATS, findTenant } from "@/lib/tenants";
-import type { Lead, LeadStats, QualificationResult } from "@/lib/types";
+import type { Lead, LeadStats, QualificationResult, Suppression } from "@/lib/types";
 import { TenantSelector } from "./TenantSelector";
 import { Stats } from "./Stats";
 import { LeadList } from "./LeadList";
 import { LeadForm } from "./LeadForm";
 import { LeadResult } from "./LeadResult";
+import { SuppressionsPanel } from "./SuppressionsPanel";
 
 type LastDecision = {
   lead: Lead;
@@ -19,16 +20,19 @@ export function Dashboard({
   initialTenantId,
   initialLeads,
   initialStats,
+  initialSuppressions,
   backend,
 }: {
   initialTenantId: string;
   initialLeads: Lead[];
   initialStats: LeadStats;
+  initialSuppressions: Suppression[];
   backend: "supabase" | "memory";
 }) {
   const [tenantId, setTenantId] = useState(initialTenantId);
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   const [stats, setStats] = useState<LeadStats>(initialStats);
+  const [suppressions, setSuppressions] = useState<Suppression[]>(initialSuppressions);
   const [last, setLast] = useState<LastDecision>(null);
   const [isPending, startTransition] = useTransition();
   const tenant = findTenant(tenantId);
@@ -41,6 +45,7 @@ export function Dashboard({
       const data = await listLeadsAction(id);
       setLeads(data.leads);
       setStats(data.stats);
+      setSuppressions(data.suppressions);
     });
   }, []);
 
@@ -86,9 +91,8 @@ export function Dashboard({
               aria-hidden
               className={`h-2 w-2 rounded-full bg-gradient-to-r ${tenant.accent}`}
             />
-            <h2 className="text-sm font-semibold tracking-tight">
-              New lead — {tenant.label}
-            </h2>
+            <h2 className="text-sm font-semibold tracking-tight">Add a lead</h2>
+            <span className="ml-auto text-xs opacity-50">{tenant.label}</span>
           </header>
           <LeadForm tenantId={tenantId} onSuccess={handleSuccess} />
           {last ? (
@@ -101,22 +105,27 @@ export function Dashboard({
         <section className="rounded-2xl border border-black/10 bg-white/70 p-5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/5">
           <header className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold tracking-tight">
-              Recent leads
+              Recent activity
             </h2>
             <span className="text-xs opacity-50">
-              {isPending ? "Refreshing…" : `${leads.length} shown`}
+              {isPending
+                ? "Refreshing…"
+                : leads.length === 0
+                  ? "No records yet"
+                  : `Showing ${leads.length}`}
             </span>
           </header>
           <LeadList leads={leads} onChanged={() => refresh(tenantId)} />
         </section>
       </div>
 
+      <SuppressionsPanel tenantId={tenantId} suppressions={suppressions} />
+
       <p className="rounded-lg border border-dashed border-black/10 px-4 py-3 text-xs opacity-70 dark:border-white/10">
-        <strong className="font-semibold">Multi-tenancy demo:</strong> switch
-        tenants above and you will only see that tenant&apos;s rows. Every write
-        carries <span className="font-mono">tenant_id</span>; every read filters
-        by it. RLS is enabled at the database. Emails are masked in the UI so
-        screenshots are safe.
+        <strong className="font-semibold">Workspace isolation.</strong>{" "}
+        Switching workspaces above only loads the active workspace&apos;s
+        records. Each row is bound to its workspace at write time, filtered on
+        every read, and protected by row-level security at the database.
       </p>
     </div>
   );
@@ -133,8 +142,8 @@ function BackendBadge({ backend }: { backend: "supabase" | "memory" }) {
       ].join(" ")}
       title={
         backend === "supabase"
-          ? "Connected to Supabase via service-role server client."
-          : "Using in-memory fallback. Set NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY to switch automatically."
+          ? "Connected to Supabase. Server-side service-role client; row-level security enforced."
+          : "Local in-memory store — records reset on server restart. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to switch automatically."
       }
     >
       <span
@@ -142,7 +151,7 @@ function BackendBadge({ backend }: { backend: "supabase" | "memory" }) {
           backend === "supabase" ? "bg-emerald-500" : "bg-amber-500"
         }`}
       />
-      {backend === "supabase" ? "Supabase" : "In-memory (dev)"}
+      {backend === "supabase" ? "Live database" : "Local store"}
     </span>
   );
 }

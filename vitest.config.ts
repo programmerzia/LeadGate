@@ -5,7 +5,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
-    globals: false,
+    globals: true,
+    setupFiles: ["./tests/setup.ts"],
     reporters: "verbose",
   },
   resolve: {

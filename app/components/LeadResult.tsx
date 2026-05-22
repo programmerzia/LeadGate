@@ -20,7 +20,7 @@ export function LeadResult({
       ].join(" ")}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-semibold">Last decision</span>
+        <span className="text-sm font-semibold">Qualification result</span>
         <StatusBadge
           status={qualification.status}
           reason={qualification.exclusion_reason}
@@ -28,8 +28,9 @@ export function LeadResult({
       </div>
       <p className="mt-2 text-sm">{qualification.message}</p>
       <p className="mt-2 text-xs opacity-60">
-        Saved as <span className="font-mono">{lead.id.slice(0, 8)}…</span> for{" "}
-        <span className="font-mono">{lead.company_name}</span>
+        Recorded for <span className="font-medium">{lead.company_name}</span>
+        <span className="opacity-60"> · ID </span>
+        <span className="font-mono">{lead.id.slice(0, 8)}</span>
       </p>
     </div>
   );

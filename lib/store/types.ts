@@ -1,5 +1,12 @@
 import "server-only";
-import type { Lead, LeadStats, LeadStatus, ExclusionReason } from "@/lib/types";
+import type {
+  Lead,
+  LeadStats,
+  LeadStatus,
+  ExclusionReason,
+  Suppression,
+  SuppressionKind,
+} from "@/lib/types";
 
 export type NewLead = {
   tenant_id: string;
@@ -24,6 +31,38 @@ export interface LeadStore {
    * row was actually removed; false if no match (silently treated as no-op).
    */
   deleteById(tenantId: string, id: string): Promise<boolean>;
+
+  /**
+   * Check if an email (or its domain) is suppressed or unsubscribed.
+   * Returns 'unsubscribed' if kind='unsubscribed', 'suppressed' for manual blocks,
+   * or null if not found.
+   */
+  checkSuppression(
+    tenantId: string,
+    email: string,
+  ): Promise<"suppressed" | "unsubscribed" | null>;
+
+  /**
+   * List all suppressions for a tenant (no limit — show all in UI).
+   */
+  listSuppressions(tenantId: string): Promise<Suppression[]>;
+
+  /**
+   * Add a suppression. Normalizes pattern (lowercase + trim). Returns the new
+   * suppression, or existing one on UNIQUE constraint violation (idempotent).
+   */
+  addSuppression(
+    tenantId: string,
+    kind: SuppressionKind,
+    pattern: string,
+  ): Promise<Suppression>;
+
+  /**
+   * Remove a suppression by id, scoped to tenant. Returns true if deleted,
+   * false if not found.
+   */
+  removeSuppression(tenantId: string, id: string): Promise<boolean>;
+
   /** Backend identifier surfaced in the UI badge. */
   readonly backend: "supabase" | "memory";
 }

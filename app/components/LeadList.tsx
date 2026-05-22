@@ -58,9 +58,9 @@ export function LeadList({
         >
           ∅
         </div>
-        <p className="text-sm font-medium">No leads yet for this tenant</p>
+        <p className="text-sm font-medium">No leads in this workspace yet</p>
         <p className="mt-1 text-xs opacity-60">
-          Submit the form to add your first lead.
+          Add your first lead using the form on the left.
         </p>
       </div>
     );

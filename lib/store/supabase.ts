@@ -1,7 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Lead } from "@/lib/types";
+import type { Lead, Suppression, SuppressionKind } from "@/lib/types";
 import type { LeadStore, NewLead } from "./types";
+import { extractDomain } from "@/lib/domain-utils";
 
 /**
  * Supabase-backed lead store.
@@ -74,6 +75,92 @@ export class SupabaseStore implements LeadStore {
       .eq("id", id)
       .select("id");
     if (error) throw new Error(`leads.delete failed: ${error.message}`);
+    return (data?.length ?? 0) > 0;
+  }
+
+  async checkSuppression(
+    tenantId: string,
+    email: string,
+  ): Promise<"suppressed" | "unsubscribed" | null> {
+    const emailLower = email.toLowerCase();
+    const domain = extractDomain(email);
+
+    // Single query with OR logic to check email, domain, and unsubscribed
+    const { data, error} = await this.client
+      .from("tenant_suppressions")
+      .select("kind")
+      .eq("tenant_id", tenantId)
+      .or(
+        `and(kind.eq.email,pattern.eq.${emailLower}),` +
+        (domain ? `and(kind.eq.domain,pattern.eq.${domain}),and(kind.eq.unsubscribed,pattern.eq.${domain})` : ""),
+      )
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw new Error(`suppressions.check failed: ${error.message}`);
+    if (!data) return null;
+
+    return data.kind === "unsubscribed" ? "unsubscribed" : "suppressed";
+  }
+
+  async listSuppressions(tenantId: string): Promise<Suppression[]> {
+    const { data, error } = await this.client
+      .from("tenant_suppressions")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("created_at", { ascending: false });
+
+    if (error)
+      throw new Error(`suppressions.list failed: ${error.message}`);
+    return (data ?? []) as Suppression[];
+  }
+
+  async addSuppression(
+    tenantId: string,
+    kind: SuppressionKind,
+    pattern: string,
+  ): Promise<Suppression> {
+    const normalizedPattern = pattern.trim().toLowerCase();
+
+    const { data, error } = await this.client
+      .from("tenant_suppressions")
+      .insert({
+        tenant_id: tenantId,
+        kind,
+        pattern: normalizedPattern,
+      })
+      .select("*")
+      .single();
+
+    // Handle UNIQUE constraint violation (idempotent)
+    if (error) {
+      if (error.code === "23505") {
+        // Fetch existing
+        const { data: existing } = await this.client
+          .from("tenant_suppressions")
+          .select("*")
+          .eq("tenant_id", tenantId)
+          .eq("kind", kind)
+          .eq("pattern", normalizedPattern)
+          .single();
+        if (existing) return existing as Suppression;
+      }
+      throw new Error(`suppressions.add failed: ${error.message}`);
+    }
+
+    return data as Suppression;
+  }
+
+  async removeSuppression(tenantId: string, id: string): Promise<boolean> {
+    const { data, error } = await this.client
+      .from("tenant_suppressions")
+      .delete()
+      .eq("tenant_id", tenantId)
+      .eq("id", id)
+      .select("id");
+
+    if (error)
+      throw new Error(`suppressions.remove failed: ${error.message}`);
     return (data?.length ?? 0) > 0;
   }
 }

@@ -1,3 +1,5 @@
+import { extractDomain } from "./domain-utils";
+
 /**
  * Disposable / temporary email domains we refuse for outbound.
  *
@@ -25,8 +27,8 @@ export const DISPOSABLE_DOMAINS: ReadonlySet<string> = new Set([
  * appears in DISPOSABLE_DOMAINS. Returns false for malformed input.
  */
 export function isDisposableEmail(email: string): boolean {
-  const at = email.lastIndexOf("@");
-  if (at === -1 || at === email.length - 1) return false;
-  const domain = email.slice(at + 1).trim().toLowerCase();
+  const domain = extractDomain(email);
+  if (!domain) return false;
   return DISPOSABLE_DOMAINS.has(domain);
 }
+

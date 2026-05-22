@@ -21,6 +21,8 @@ const STATUS_STYLES: Record<LeadStatus, { label: string; classes: string }> = {
 const REASON_LABELS: Record<ExclusionReason, string> = {
   missing_email: "missing email",
   disposable_email: "disposable email",
+  suppressed: "suppressed",
+  unsubscribed: "unsubscribed",
 };
 
 export function StatusBadge({
